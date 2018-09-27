@@ -25,9 +25,8 @@ class EntityNameProviderDecorator implements EntityNameProviderInterface
     {
         if ($entity instanceof User) {
             return sprintf('%s %s %s', $entity->getLastName(), $entity->getFirstName(), $entity->getMiddleName());
-        } else {
-            return $this->originalProvider->getName($format, $locale, $entity);
         }
+        return $this->originalProvider->getName($format, $locale, $entity);
     }
 
     /**
