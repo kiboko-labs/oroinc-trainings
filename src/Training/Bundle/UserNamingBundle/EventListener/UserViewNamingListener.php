@@ -4,6 +4,7 @@ namespace Training\Bundle\UserNamingBundle\EventListener;
 
 use Doctrine\Common\Persistence\ManagerRegistry;
 
+use Oro\Bundle\SecurityBundle\SecurityFacade;
 use Oro\Bundle\UIBundle\Event\BeforeListRenderEvent;
 
 class UserViewNamingListener
@@ -11,12 +12,16 @@ class UserViewNamingListener
     /** @var ManagerRegistry */
     private $registry;
 
+    /** @var SecurityFacade */
+    private $securityFacade;
+
     /**
      * @param ManagerRegistry $registry
      */
-    public function __construct(ManagerRegistry $registry)
+    public function __construct(ManagerRegistry $registry, SecurityFacade $securityFacade)
     {
         $this->registry = $registry;
+        $this->securityFacade = $securityFacade;
     }
 
     /**
@@ -24,6 +29,10 @@ class UserViewNamingListener
      */
     public function onUserView(BeforeListRenderEvent $event)
     {
+        if (!$this->securityFacade->isGranted('training_user_naming_info')) {
+            return;
+        }
+
         $user = $event->getEntity();
         if (!$user) {
             return;
