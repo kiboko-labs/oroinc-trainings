@@ -1,0 +1,168 @@
+version: '2'
+
+services:
+  mail:
+    image: schickling/mailcatcher:latest
+    ports:
+      - 11080:1080
+      - 11025:1025
+
+  amqp:
+    image: rabbitmq:3.6-management
+    ports:
+      - 5672:5672
+      - 8080:15672
+#    environment:
+#      - RABBITMQ_DEFAULT_USER=oroinc
+#      - RABBITMQ_DEFAULT_PASS=pssword
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.6.1
+    ports:
+      - 19200:9200
+    environment:
+      - cluster.name=docker-cluster
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - discovery.type=single-node
+      - http.port=9200
+      - http.cors.allow-origin=http://localhost:1358,http://127.0.0.1:11358,http://192.168.64.4:11358,http://dejavu:1358,http://host.docker.internal:11358
+      - http.cors.enabled=true
+      - http.cors.allow-headers=X-Requested-With,X-Auth-Token,Content-Type,Content-Length,Authorization
+      - http.cors.allow-credentials=true
+
+  dejavu:
+    image: appbaseio/dejavu
+    ports:
+      - 11358:1358
+
+  sql:
+    image: postgres:9.6-alpine
+    hostname: sql
+    environment:
+      POSTGRES_USER: "oroinc"
+      POSTGRES_DB: "oroinc"
+      POSTGRES_PASSWORD: "password"
+      POSTGRES_ROOT_PASSWORD: "password"
+    ports:
+      - 15435:5432
+    volumes:
+      - ./.docker/postgres@9.6/sql/uuid-ossp.sql:/docker-entrypoint-initdb.d/00-uuid-ossp.sql:ro
+      - ./.docker/postgres@9.6/sql/role.sql:/docker-entrypoint-initdb.d/01-role.sql:ro
+      - ./.docker/postgres@9.6/sql/dump.sql:/docker-entrypoint-initdb.d/02-dump.sql:ro
+
+  http:
+    image: nginx:alpine
+    volumes:
+      - ./.docker/nginx@1.15/config/options.conf:/etc/nginx/conf.d/000-options.conf
+      - ./.docker/nginx@1.15/config/vhost-prod.conf:/etc/nginx/conf.d/default.conf
+      - ./public:/var/www/html
+      - cache:/var/www/html/var/cache:delegated
+      - assets:/var/www/html/public/bundles:delegated
+    restart: on-failure
+    ports:
+      - 10080:80
+
+  http-dev:
+    image: nginx:alpine
+    volumes:
+      - ./.docker/nginx@1.15/config/options.conf:/etc/nginx/conf.d/000-options.conf
+      - ./.docker/nginx@1.15/config/vhost-dev.conf:/etc/nginx/conf.d/default.conf
+      - ./:/var/www/html
+      - cache:/var/www/html/var/cache:delegated
+      - assets:/var/www/html/public/bundles:delegated
+    restart: on-failure
+    ports:
+      - 10081:80
+
+  http-xdebug:
+    image: nginx:alpine
+    volumes:
+      - ./.docker/nginx@1.15/config/options.conf:/etc/nginx/conf.d/000-options.conf
+      - ./.docker/nginx@1.15/config/vhost-xdebug.conf:/etc/nginx/conf.d/default.conf
+      - ./:/var/www/html
+      - cache:/var/www/html/var/cache:delegated
+      - assets:/var/www/html/public/bundles:delegated
+    restart: on-failure
+    ports:
+      - 10082:80
+
+  fpm:
+    image: kiboko/php:7.2-fpm-blackfire-orocommerce-ce-3.1
+    user: docker:docker
+    volumes:
+      - ./.docker/php@7.2/fpm/config/memory.ini:/usr/local/etc/php/conf.d/memory.ini:ro
+      - ./.docker/php@7.2/fpm/config/pool.ini:/usr/local/etc/php/conf.d/pool.ini:ro
+      - ./:/var/www/html
+      - cache:/var/www/html/var/cache:delegated
+      - assets:/var/www/html/public/bundles:delegated
+    restart: "always"
+
+  fpm-xdebug:
+    image: kiboko/php:7.2-fpm-xdebug-orocommerce-ce-3.1
+    user: docker:docker
+    volumes:
+      - ./.docker/php@7.2/fpm/config/memory.ini:/usr/local/etc/php/conf.d/memory.ini:ro
+      - ./.docker/php@7.2/fpm/config/pool.ini:/usr/local/etc/php/conf.d/pool.ini:ro
+      - ./:/var/www/html
+      - cache:/var/www/html/var/cache:delegated
+      - assets:/var/www/html/public/bundles:delegated
+    restart: "always"
+
+  fpm-blackfire:
+    image: blackfire/blackfire
+    environment:
+      - BLACKFIRE_SERVER_ID
+      - BLACKFIRE_SERVER_TOKEN
+
+  sh:
+    image: kiboko/php:7.2-cli-blackfire-orocommerce-ce-3.1
+    user: docker:docker
+    volumes:
+      - ./.docker/php@7.2/cli/config/memory.ini:/usr/local/etc/php/conf.d/memory.ini:ro
+      - ./:/var/www/html
+      - cache:/var/www/html/var/cache:delegated
+      - assets:/var/www/html/public/bundles:delegated
+    restart: "no"
+
+  sh-xdebug:
+    image: kiboko/php:7.2-cli-xdebug-orocommerce-ce-3.1
+    user: docker:docker
+    volumes:
+      - ./.docker/php@7.2/cli-xdebug/config/memory.ini:/usr/local/etc/php/conf.d/memory.ini:ro
+      - ./.docker/php@7.2/cli-xdebug/config/xdebug.ini:/usr/local/etc/php/conf.d/xdebug.ini:ro
+      - ./:/var/www/html
+      - cache:/var/www/html/var/cache:delegated
+      - assets:/var/www/html/public/bundles:delegated
+    restart: "no"
+
+  composer:
+    extends:
+      service: sh
+    volumes:
+      - $HOME/.ssh:/opt/docker/:cached
+      - composer:/opt/docker/.composer/:cached
+    entrypoint: [ "composer" ]
+    environment:
+      COMPOSER_AUTH: '{"github-oauth":{"github.com": "${COMPOSER_GITHUB_TOKEN}"}}'
+    restart: "no"
+
+volumes:
+  composer:
+    driver: local
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
+      o: "size=2048m,uid=1000,gid=1000"
+  assets:
+    driver: local
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
+      o: "size=2048m,uid=1000,gid=1000"
+  cache:
+    driver: local
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
+      o: "size=2048m,uid=1000,gid=1000"
