@@ -49,14 +49,13 @@ services:
     volumes:
       - ./.docker/postgres@9.6/sql/uuid-ossp.sql:/docker-entrypoint-initdb.d/00-uuid-ossp.sql:ro
       - ./.docker/postgres@9.6/sql/role.sql:/docker-entrypoint-initdb.d/01-role.sql:ro
-      - ./.docker/postgres@9.6/sql/dump.sql:/docker-entrypoint-initdb.d/02-dump.sql:ro
 
   http:
     image: nginx:alpine
     volumes:
       - ./.docker/nginx@1.15/config/options.conf:/etc/nginx/conf.d/000-options.conf
       - ./.docker/nginx@1.15/config/vhost-prod.conf:/etc/nginx/conf.d/default.conf
-      - ./public:/var/www/html
+      - ./:/var/www/html
       - cache:/var/www/html/var/cache:delegated
       - assets:/var/www/html/public/bundles:delegated
     restart: on-failure
