@@ -1,0 +1,4 @@
+services:
+  app_user_naming.provider.entity_name:
+    decorates: oro_locale.entity_name_provider
+    public: false

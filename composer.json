@@ -9,7 +9,10 @@
     }
   ],
   "autoload": {
-    "psr-4": {"": "src/"},
+    "psr-4": {
+      "": "src/",
+      "App\\UserNamingBundle\\": "src/UserNamingBundle"
+    },
     "files": ["src/AppKernel.php"],
     "exclude-from-classmap": ["**/Tests/"]
   },
