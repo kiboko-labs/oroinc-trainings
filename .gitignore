@@ -18,7 +18,6 @@ behat.yml
 !var/import_export/
 /var/import_export/*
 !var/import_export/.gitkeep
-!var/php/
 !var/oro-check.php
 !var/OroRequirements.php
 /build/logs/*
@@ -33,7 +32,6 @@ node_modules/
 /public/media/cache
 /public/media/js
 /public/build.js
-/public/tracking.php
 /config/parameters.yml
 /config/parameters_test.yml
 phpunit.xml
@@ -46,3 +44,9 @@ bin/*
 /public/uploads/behat
 /.web-server-pid
 /.vagrant
+
+# DO NOT DO THIS FOR REAL PROJECTS. IT'S HERE JUST FOR TRAINING PURPOSE !!
+!var/oauth_private.key
+!var/oauth_public.key
+
+/.env

@@ -1,0 +1,2 @@
+bundles:
+  - { name: Training\UserBundle\UserBundle, priority: 10 }
