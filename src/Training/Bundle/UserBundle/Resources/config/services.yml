@@ -1,0 +1,19 @@
+#parameters:
+#  oro_training.formatter.name.class: 'Training\UserBundle\Formatter\Name'
+
+services:
+  oro_training_decorator_user:
+    class: 'Training\UserBundle\Provider\EntityNameProvider'
+    decorates: '@oro_locale.entity_name_provider'
+    public: false
+    arguments:
+        - '@oro_training_decorator_user.inner'
+#
+#  oro_training.formatter.name:
+#    class: '%oro_training.formatter.name.class%'
+#    arguments:
+#      - '@oro_locale.settings'
+#
+#  oro_locale.formatter.name.link:
+#    tags:
+#      - { name: oro_service_link, service: oro_training.formatter.name }
